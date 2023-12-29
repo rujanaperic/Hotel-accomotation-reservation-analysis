@@ -1,0 +1,67 @@
+---
+title: "Analiza rezervacija hotelskog smještaja"
+subtitle: "Grupa Prosječni"
+author: "Mario Mrvčić, Rujana Perić, Dorjan Štrbac, Sven Winkler"
+output: pdf_document
+date: "2023-12-29"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## OPIS ZADATKA
+
+U današnje vrijeme turistička djelatnost jako je popularna, a tržište puno konkurencije. Zanima nas kako hoteli mogu prilagoditi svoje usluge kako bi poboljšali zadovoljnost gostiju i povećali profitabilnost. 
+
+Posjedujući skup podataka koji detaljno dokumentira rezervacije u dva različita hotela želimo istražiti, bolje razumjeti i ispitati veze između boravka u hotelu, godišnjeg doba, socio-ekonomskog statusa gosta, cijena, tipa rezervacija i sličnih parametara danih skupom podataka. 
+
+## Učitavanje podataka o rezervacijama 
+
+Skup podataka sastoji se od 119390 podataka o rezervacijama u dva hotela. Svaki podatak o rezervaciji sastoji se od 31 varijable koje pružaju uvid u trendove dolaska, demografske podatke gostiju, njihove financijske obrasce... 
+
+U nastavku možemo vidjeti isječak nekoliko zapisa iz baze sa svim pripadajućim varijablama. 
+
+```{r h1 data, h2 data, combined}
+h1_data = read.csv("Rezervacije/Rezervacije_/H1.csv")
+h2_data = read.csv("Rezervacije/Rezervacije_/H2.csv")
+data <- rbind(h1_data, h2_data)
+dim(data)
+head(data)
+#imena stupaca
+```
+
+# Case study: TRAJANJE BORAVKA GOSTA 
+
+Slijedi detaljna analiza trajanja boravka gosta s obrizom na različite parametre. 
+
+### Trajanje prosječnog boravka tjekom različitih godišnjih doba
+
+Dogovorno su godišnja doba definirana na idući način: 
+
+ljeto - lipanj, srpanj, kolovoz
+
+jesen - rujan, listopad, studeni
+
+zima - prosinac, siječanj, veljača
+
+proljeće -ožujak, travanj, svibanj
+
+Definiramo čeriti pomoćna skupa podataka za svako godišnje doba grupirajući po paramteru "ArrivalDateMonth".
+
+```{r data by season}
+
+```
+Pomoćnim skupovima dodajemo i parametar "TotalStays" koji predstavlja sumu vrijednosti parametara "StaysInWeekendNights" i "StaysInWeekNights" kako bismo dobili uvid o trajanju boravka gosta neovisno o danima u tjednu. 
+
+```{r data by season, total stays}
+
+```
+
+Računamo prosječnu duljinu trajanja boravka za svaki pomoćni skup podataka, rezultat prikazujemo histogramom. 
+
+```{r data by season, average stays duration}
+
+```
+   
+
