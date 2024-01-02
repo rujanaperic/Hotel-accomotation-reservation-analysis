@@ -20,16 +20,25 @@ Posjedujući skup podataka koji detaljno dokumentira rezervacije u dva različit
 
 Skup podataka sastoji se od 119390 podataka o rezervacijama u dva hotela. Svaki podatak o rezervaciji sastoji se od 31 varijable koje pružaju uvid u trendove dolaska, demografske podatke gostiju, njihove financijske obrasce... 
 
-U nastavku možemo vidjeti isječak nekoliko zapisa iz baze sa svim pripadajućim varijablama. 
+U nastavku je prikazan: 
 
+- podatak o broju zapisa rezervacija 
 ```{r h1 data, h2 data, combined}
 h1_data = read.csv("Rezervacije/Rezervacije_/H1.csv")
 h2_data = read.csv("Rezervacije/Rezervacije_/H2.csv")
 data <- rbind(h1_data, h2_data)
 dim(data)
+``` 
+
+- primjer nekoliko zapisa
+``` {r}
 head(data)
-#imena stupaca
 ```
+- svi parametri rezervacija 
+``` {r}
+names(data)
+```
+\newpage
 
 # Case study: TRAJANJE BORAVKA GOSTA 
 
@@ -37,31 +46,182 @@ Slijedi detaljna analiza trajanja boravka gosta s obrizom na različite parametr
 
 ### Trajanje prosječnog boravka tjekom različitih godišnjih doba
 
-Dogovorno su godišnja doba definirana na idući način: 
-
-ljeto - lipanj, srpanj, kolovoz
-
-jesen - rujan, listopad, studeni
-
-zima - prosinac, siječanj, veljača
-
+Dogovorno su godišnja doba definirana na idući način: \    
+ljeto - lipanj, srpanj, kolovoz \    
+jesen - rujan, listopad, studeni \   
+zima - prosinac, siječanj, veljača \   
 proljeće -ožujak, travanj, svibanj
 
 Definiramo čeriti pomoćna skupa podataka za svako godišnje doba grupirajući po paramteru "ArrivalDateMonth".
 
 ```{r data by season}
+summer = rbind(data[data$ArrivalDateMonth == "June",], 
+               data[data$ArrivalDateMonth == "July",], 
+               data[data$ArrivalDateMonth == "August",])
 
+autumn = rbind(data[data$ArrivalDateMonth == "September",], 
+               data[data$ArrivalDateMonth == "October",], 
+               data[data$ArrivalDateMonth == "November",])
+
+winter = rbind(data[data$ArrivalDateMonth == "December",], 
+               data[data$ArrivalDateMonth == "January",], 
+               data[data$ArrivalDateMonth == "February",])
+
+spring = rbind(data[data$ArrivalDateMonth == "March",], 
+               data[data$ArrivalDateMonth == "April",], 
+               data[data$ArrivalDateMonth == "May",])
 ```
+
 Pomoćnim skupovima dodajemo i parametar "TotalStays" koji predstavlja sumu vrijednosti parametara "StaysInWeekendNights" i "StaysInWeekNights" kako bismo dobili uvid o trajanju boravka gosta neovisno o danima u tjednu. 
 
 ```{r data by season, total stays}
+library(magrittr)
+library(dplyr)
+
+summer_total <- summer %>%
+  mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
+dim(summer_total)
+
+autumn_total <- autumn %>%
+  mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
+dim(autumn_total)
+
+winter_total <- winter %>%
+  mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
+dim(winter_total)
+
+spring_total <- spring %>%
+  mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
+dim(spring_total)
+```
+Iz novih dimenzija možemo vijeti da je dodan novi parametar svakom zapisu. 
+
+Računamo prosječnu duljinu trajanja boravka za svaki pomoćni skup podataka, rezultat prikazujemo stupičastim dijagramom.  
+
+```{r means by seasons data}
+
+seasons_means_vector = data.frame(
+  Season = c("Winter", "Spring", "Summer", "Autumn"), 
+  Means = c(mean(winter_total$TotalStays), 
+            mean(spring_total$TotalStays), 
+            mean(summer_total$TotalStays), 
+            mean(autumn_total$TotalStays))
+)
+
+barplot(seasons_means_vector$Means, names.arg = seasons_means_vector$Season, col = "skyblue", xlab = "Seasons", ylab = "Average night stays")
+
+```
+Iz histograma možemo zaključiti da je prosječni boravak gostiju najduži ljeti, a najkraći zimi. 
+
+### Trajanje prosječnog boravka i tip iznajmljene sobe
+
+Naše istraživačko pitanje je slijedeće: \   
+Možemo li trajanje boravka povezati s tipom iznajmljene sobe?
+
+Pogledajmo najprije koje sve kategorije soba za iznajmljivanje postoje.
+
+```{r}
+#binding adjusted data
+data_total_stays = rbind(winter_total, spring_total, summer_total, autumn_total)
+#all different values of "ReservedRoomType" variable
+
+```
+...objašnjenja što je koja soba...
+
+```{r}
+#calculating average "TotalStays" for every room type
+
+
+#plotting data...
 
 ```
 
-Računamo prosječnu duljinu trajanja boravka za svaki pomoćni skup podataka, rezultat prikazujemo histogramom. 
+Iz priloženog možemo vidjeti da je prosječna duljina boravka najduža ...., a najkraća ....
 
-```{r data by season, average stays duration}
+```{r}
+#box and whisker plot --> mean, rangs, median, variances....
 
 ```
-   
+... komentar na box and whisker plot...
 
+Imajući detaljan uvid u dane statistike, nas zanima postoji li povezanost između duljine boravka i tipa iznajmljene sobe na razini značajnosti od 5%. 
+
+Naša testne hipoteze biti će: \       
+H_0: Prosječna duljina boravka jednaka je za sve tipove soba. \    
+H_1: Za barem jedan tip sobe prosječna duljina boravka različita je od ostalih. \    
+
+Test koji koristimo za ispirivanje ove hipoteze je ANOVA.
+
+```{r ANOVA soba}
+#ANOVA
+
+```
+Zaključak: \    
+.......
+
+Diskusija: \    
+.......
+
+### Trajanje prosječnog boravka i kategorija gosta
+
+Naše iduće istraživačko pitanje je slijedeće: \   
+Možemo li trajanje boravka povezati s kategorijom gosta?
+
+Analizirajmo postojeće podatke iz databaze. Koje sve kategorije gostiju postoje.
+
+```{r}
+#all different values of "CustomerType" variable
+
+```
+...objašnjenja što je koja kategorija gosta...
+
+```{r}
+#calculating average "TotalStays" for every customer type
+
+
+#plotting data...
+
+```
+
+Iz priloženog možemo vidjeti da je prosječna duljina boravka najduža ...., a najkraća ....
+
+```{r}
+#box and whisker plot --> mean, rangs, median, variances....
+
+```
+... komentar na box and whisker plot...
+
+Zanima postoji li povezanost između duljine boravka i kategorije gosta na razini značajnosti od 5%. 
+
+Naša testne hipoteze biti će: \       
+H_0: Prosječna duljina boravka jednaka je za sve tipove gostiju. \    
+H_1: Za barem jednu kategoriju gosta prosječna duljina boravka različita je od ostalih. \    
+
+Test koji koristimo za ispirivanje ove hipoteze je ANOVA.
+
+```{r ANOVA gost}
+#ANOVA
+
+```
+Zaključak: \    
+.......
+
+Diskusija: \    
+.......
+
+............. ZAKLJUČNA DISKUSIJA ZA CIJELI CASE STUDY ...............
+\newpage
+
+# Case study: CIJENE
+
+\newpage
+
+# Case study: PANSION, POLUPANSION
+
+\newpage
+
+# Case study: OTKAZIVANJE REZERVACIJA
+
+\newpage
+
+# Case study: SKUPINE GOSTIJU IZ RAZLIČITIH ZEMALJA
