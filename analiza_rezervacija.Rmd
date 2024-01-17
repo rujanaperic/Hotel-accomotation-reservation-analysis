@@ -44,7 +44,7 @@ names(data)
 
 Slijedi detaljna analiza trajanja boravka gosta s obrizom na različite parametre. 
 
-### Trajanje prosječnog boravka tjekom različitih godišnjih doba
+## Trajanje prosječnog boravka tjekom različitih godišnjih doba
 
 Dogovorno su godišnja doba definirana na idući način: \    
 ljeto - lipanj, srpanj, kolovoz \    
@@ -109,7 +109,7 @@ data_total_stays = rbind(winter_total, spring_total, summer_total, autumn_total)
 ```
 Iz histograma možemo zaključiti da je prosječni boravak gostiju najduži ljeti, a najkraći zimi. 
 
-### Trajanje prosječnog boravka i tip iznajmljene sobe
+## Trajanje prosječnog boravka i tip iznajmljene sobe
 
 Naše istraživačko pitanje je slijedeće: \   
 Možemo li trajanje boravka povezati s tipom iznajmljene sobe?
@@ -207,7 +207,7 @@ summary(a)
 Zaključak: \    
 Na temelju malene p-vrijednosti odbacujemo nultu hipotezu u korist altervativne hipoteze: **postoje razlike u duljini trajanja boravka ovisno o tipu iznajmljene sobe.**
 
-### Trajanje prosječnog boravka i kategorija gosta
+## Trajanje prosječnog boravka i kategorija gosta
 
 Naše iduće istraživačko pitanje je slijedeće: \   
 Možemo li trajanje boravka povezati s kategorijom gosta?
@@ -303,3 +303,131 @@ Kao što smo i mogli naslutiti, duljina boravka gosta varira s obzirom na razli�
 \newpage
 
 # Case study: SKUPINE GOSTIJU IZ RAZLIČITIH ZEMALJA
+
+\newpage
+
+# Case study: OBITELJI S DJECOM 
+
+Zanimaju nas obrasci ponašanja obitelji s djecom poput: koji tip sobe obitelji s djecom najčešće iznajmljuju, imaju li takvi gosti više posebnih zahtjeva naspram ostalih gostiju...
+
+Kako bismo u nastavku zadatka mogli odgovoriti na postavljena pitanja, najprije ćemo postojeći dataset filtrirati i prilagoditi. 
+
+```{r family dataset}
+library(dplyr)
+
+families = data_total_stays %>%
+  filter(Adults > 0, Children >= 0, Babies > 0 | Adults > 0, Children > 0, Babies >= 0)
+```
+
+## Postoji li razlika u popularnosti traženih tipova soba s obzirom na broj djece koje obitelj ima?
+
+Uvodimo novu varijablu koja obuhvaća i djecu i bebe i nazivamo ju "TotalNonAdults".
+
+```{r children variable}
+library(dplyr)
+
+families_children_num = families %>%
+  mutate(TotalNonAdults = Children + Babies)
+```
+
+Možemo naslutiti da će postojati razlika u popularnosti traženih tipova soba kod obitelji koje, primjerice, ima jedno dijete naspram obitelji koje imaju troje ili više djece. 
+
+Naše hipoteze glase: \       
+$$ \begin{aligned}
+  H_0 & : \text{u svim tipovima soba su prosječno podjednako velike obitelji} \\
+  H_1 & : \text{u barem jednom tipu sobe prosječna veličina obitelji je drugačija no u ostalih}
+\end{aligned} $$
+
+Ova problematika može se testirati ANOVOM, no ANOVA ima predpostavke na nezavisnost podataka u urozku, normalnu distribuciju i  homogenost varijanci.  \    
+Želimo izbjeći predpostavku da je uzorak iz populaicje normalne distribucije pa ćemo se u testiranju hipoteze poslužiti Kruskal-Wallisovim testom. 
+
+```{r kruskal-wallis rooms}
+#KRUSKAL-WALLIS
+kruskal.test(families_children_num$TotalNonAdults ~ families_children_num$ReservedRoomType)
+```
+Iz rezultata provedenog testa možemo vidjeti malenu p-vrijednost što nalaže odbacivanje nulte hipoteze u korist alternativne hipoteze.\          
+
+Zaključak: \            
+U barem jednom tipu sobe prosječna veličina obitelji je drugačija no u ostalih, što možemo sročiti i tako da postoji razlika u popularnosti traženih tipova soba s obzirom na broj djece koje obitelj ima, kao što smo i predpostavili. 
+
+## Postoji li razlika u količini posebnih zahtjeva s obzirom na broj djece koje obitelj ima?
+
+Postupak dolaženja do zaključka isti je kao u prethodnom primjeru, kako bismo izbjegli predpostavku normalnosti normalne distribucije populacije poslužiti ćemo se Kruskal-Wallisovim testom.
+
+Naše hipoteze glase: \ 
+$$ \begin{aligned}
+  H_0 & : \text{prosječni broj posebnih zahtjeva ne razlikuje se s obzirom na broj članova obitelji} \\
+  H_1 & : \text{za barem jedan broj članova obitelji, prosječni broj posebnih zahtjeva je drugačiji}
+\end{aligned} $$
+
+```{r kruskal-wallis special requests}
+#KRUSKAL-WALLIS
+kruskal.test(families_children_num$TotalNonAdults ~ families_children_num$TotalOfSpecialRequests)
+```
+Iz rezultata provedenog testa možemo vidjeti malenu p-vrijednost što nalaže odbacivanje nulte hipoteze u korist alternativne hipoteze.
+
+Zaključak: \                
+U ovisno o veličini obitelji, mijenja se i prosječni broj posebnih zahtjeva što možemo sročiti i tako da postoji razlika u količini posebnih zahtjeva s obzirom na broj djece koje obitelj ima. 
+
+\newpage
+
+# Case study: USPOREDBA LJETNIH SEZONA
+
+ADR ("Average daily rate index") je glavni identifikator hotelijesko-turističke djelatnosti kojim se mjeri prosječna zarada po svakoj iznajmljenoj sobi u određenoj perodu vremena. To je omjer ukupnog prihoda hotela i broja iznajmljenih soba. Vrlo je važan kako bi hoteli znali odrediti svoju poslovnu i financijsku strategiju za budućnost. Viši ADR bi značio da hotel generira više prihoda po sobi, što može biti znak dobrog poslovanja. 
+
+## Je li ljetna sezona 2017. bila profitabilnija hotelima nego ljetna sezona 2016.?
+
+Kako bismo dobili odgovor na ovo pitanje poslužit ćemo se prethodno opisanim parametrom, ADR-om, kao indikatorom uspješnosti poslovanja hotela.
+
+``` {r subsets}
+#creating utility datasets
+#summer 2016 data
+summer_2016 = rbind(data[data$ArrivalDateMonth == "June",], 
+               data[data$ArrivalDateMonth == "July",], 
+               data[data$ArrivalDateMonth == "August",])
+summer_2016 = summer_2016[summer_2016$ArrivalDateYear == 2016, ]
+
+  
+#summer 2017 data
+summer_2017 = rbind(data[data$ArrivalDateMonth == "June",], 
+               data[data$ArrivalDateMonth == "July",], 
+               data[data$ArrivalDateMonth == "August",])
+summer_2017 = summer_2017[summer_2017$ArrivalDateYear == 2017, ]
+```
+
+```{r }
+#plotting data
+#histogram of difference
+hist(summer_2016$ADR - summer_2017$ADR,
+     main=paste('Histogram of ADR in 2016 - 2017'),
+     xlab='Difference of overall score')
+#qq-plot for overall ADR
+qqnorm(summer_2016$ADR - summer_2017$ADR, 
+       pch = 1, 
+       frame = FALSE, 
+       main=paste('QQ-plot for overall score of ADR'))
+qqline(summer_2016$ADR - summer_2017$ADR, 
+       col = "steelblue", lwd = 2)
+```
+Iz vizualizacije razlika možemo naslutiti normalnost podataka, dok iz qq-plota vidimo tek malo odstupanje lijevog repa i desnog repa, uz normalnost podataka. 
+
+Naša hipoteze su sljedeće: \       
+$$ \begin{aligned}
+  H_0 & : \text{ljetne sezone su jednako profitabilne} \\
+  H_1 & : \text{sezona 2017. profitabilnija je od ljetne sezone 2016.}
+\end{aligned} $$
+
+```{r two sample t}
+t.test(summer_2016$ADR, 
+       summer_2017$ADR, 
+       alt = "less")
+```
+Rezultati t-testa nalažu nam odbacivanje nulte hipoteze u korist alternativne hipoteze. \           
+
+Zaključak: \            
+2017. je hotelima bila profitabilnija godina, što smo mogli zaključiti i iz prikazanih histograma.  
+
+\newpage
+
+
+
