@@ -44,7 +44,7 @@ names(data)
 
 Slijedi detaljna analiza trajanja boravka gosta s obrizom na različite parametre. 
 
-### Trajanje prosječnog boravka tjekom različitih godišnjih doba
+## Trajanje prosječnog boravka tjekom različitih godišnjih doba
 
 Dogovorno su godišnja doba definirana na idući način: \    
 ljeto - lipanj, srpanj, kolovoz \    
@@ -80,22 +80,16 @@ library(dplyr)
 
 summer_total <- summer %>%
   mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
-dim(summer_total)
 
 autumn_total <- autumn %>%
   mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
-dim(autumn_total)
 
 winter_total <- winter %>%
   mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
-dim(winter_total)
 
 spring_total <- spring %>%
   mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
-dim(spring_total)
 ```
-Iz novih dimenzija možemo vijeti da je dodan novi parametar svakom zapisu. 
-
 Računamo prosječnu duljinu trajanja boravka za svaki pomoćni skup podataka, rezultat prikazujemo stupičastim dijagramom.  
 
 ```{r means by seasons data}
@@ -110,10 +104,12 @@ seasons_means_vector = data.frame(
 
 barplot(seasons_means_vector$Means, names.arg = seasons_means_vector$Season, col = "skyblue", xlab = "Seasons", ylab = "Average night stays")
 
+#binding adjusted data
+data_total_stays = rbind(winter_total, spring_total, summer_total, autumn_total)
 ```
 Iz histograma možemo zaključiti da je prosječni boravak gostiju najduži ljeti, a najkraći zimi. 
 
-### Trajanje prosječnog boravka i tip iznajmljene sobe
+## Trajanje prosječnog boravka i tip iznajmljene sobe
 
 Naše istraživačko pitanje je slijedeće: \   
 Možemo li trajanje boravka povezati s tipom iznajmljene sobe?
@@ -121,95 +117,177 @@ Možemo li trajanje boravka povezati s tipom iznajmljene sobe?
 Pogledajmo najprije koje sve kategorije soba za iznajmljivanje postoje.
 
 ```{r}
-#binding adjusted data
-data_total_stays = rbind(winter_total, spring_total, summer_total, autumn_total)
 #all different values of "ReservedRoomType" variable
-
+room_types = unique(data_total_stays$AssignedRoomType)
+room_types
 ```
-...objašnjenja što je koja soba...
+Iz priloženog možemo vidjeti da postoji 12 različitih kategorija soba, prema tome, uzimamo 12 podskupova podataka i uspoređujemo njihove aritmetičke sredine duljine trajanja boravka (varijabla "TotayStays").  
 
-```{r}
-#calculating average "TotalStays" for every room type
+Za dati odgovor na istraživačko pitanje koristit ćemo se jednofaktorskim ANOVA modelom.
 
+Predpostavke ANOVE su: \ 
+- nezavisnost pojedinih podataka u uzorcima \  
+- normalna razdioba podataka \ 
+- homogenost varijanci među populacijama \ 
 
-#plotting data...
+Kako nam veličine grupa nisu podjednake, radimo provjeru normalnosti Lillieforsovom inačicom Kolmogorov-Smirnovljenog testa. 
+Razmatrat ćemo tip sobe kao varijablu koja određuje grupe i ukupnu duljinu boravka kao zavisnu varijablu. 
 
+```{r test predpostavki - normalnost}
+require(nortest)
+
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "I               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "A               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "E               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "D               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "F               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "C               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "H               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "G               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "P               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "B               ", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "K               ", ]$TotalStays)
 ```
+Iznimno malene p-vrijednosti nam govore kako podaci nisu normalno distribuirani.\ 
+Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na predpostavku normalnosti. Dobro tolerira odstupanja od normalne distribucije. 
 
-Iz priloženog možemo vidjeti da je prosječna duljina boravka najduža ...., a najkraća ....
+Što se tiče homogenosti varijanci različitih populacija, potrebno je testirati:
+$$ \begin{aligned}
+  H_0 & : \sigma_1^2 = \sigma_2^2 = \ldots = \sigma_k^2 \\
+  H_1 & : \text{barem dvije varijance nisu iste}.
+\end{aligned} $$
+Navedenu hipotezu možemo testirati Bartlettovim testom. 
 
-```{r}
+```{r test pretpostavki - homogenost varijanci}
+
+data_total_stays$AssignedRoomType <- factor(data_total_stays$AssignedRoomType)
+
+# Check the number of observations in each group
+group_counts <- table(data_total_stays$AssignedRoomType)
+valid_groups <- names(group_counts[group_counts >= 2])
+
+#If there is at least two oservations in the group, proceed
+filtered_data <- subset(data_total_stays, AssignedRoomType %in% valid_groups)
+
+#Bartlettovim test
+bartlett.test(filtered_data$TotalStays ~ filtered_data$AssignedRoomType)
+```
+Varijance varijable "TotalStays" nisu podjednake, što je grafički prikazano u nastavku. 
+
+```{r plotting}
 #box and whisker plot --> mean, rangs, median, variances....
+library(ggplot2)
 
+# Assuming filtered_data$AssignedRoomType is a factor
+filtered_data$AssignedRoomType <- factor(filtered_data$AssignedRoomType)
+
+# Create a boxplot using ggplot2
+ggplot(filtered_data, aes(x = AssignedRoomType, y = TotalStays)) +
+  geom_boxplot(fill = "skyblue", color = "black") +
+  labs(title = "Total Stays by Assigned Room Type",
+       x = "Assigned Room Type",
+       y = "Total Stays") +
+  theme_minimal()
 ```
-... komentar na box and whisker plot...
 
-Imajući detaljan uvid u dane statistike, nas zanima postoji li povezanost između duljine boravka i tipa iznajmljene sobe na razini značajnosti od 5%. 
+
+Dani podaci o distibuciji koja nije normalna i nehomogenosti varijanci navodi nas na zaključak da prosječna duljina boravka varira ovisno o tipu iznajmljene sobe, a to ćemo sada testirati. 
 
 Naša testne hipoteze biti će: \       
-H_0: Prosječna duljina boravka jednaka je za sve tipove soba. \    
-H_1: Za barem jedan tip sobe prosječna duljina boravka različita je od ostalih. \    
+$$ \begin{aligned}
+  H_0 & : \text{prosječna duljina boravka jednaka je za sve tipove iznajmljenih soba } \\
+  H_1 & : \text{za barem jedan tip iznajmljene sobe prosječna duljina boravka različita je no u ostalih}
+\end{aligned} $$
 
-Test koji koristimo za ispirivanje ove hipoteze je ANOVA.
-
-```{r ANOVA soba}
+```{r ANOVA rooms}
 #ANOVA
-
+a = aov(filtered_data$TotalStays ~ filtered_data$AssignedRoomType)
+summary(a)
 ```
 Zaključak: \    
-.......
+Na temelju malene p-vrijednosti odbacujemo nultu hipotezu u korist altervativne hipoteze: **postoje razlike u duljini trajanja boravka ovisno o tipu iznajmljene sobe.**
 
-Diskusija: \    
-.......
-
-### Trajanje prosječnog boravka i kategorija gosta
+## Trajanje prosječnog boravka i kategorija gosta
 
 Naše iduće istraživačko pitanje je slijedeće: \   
 Možemo li trajanje boravka povezati s kategorijom gosta?
 
-Analizirajmo postojeće podatke iz databaze. Koje sve kategorije gostiju postoje.
+Procedura zaključivanja i odgovaranja na ovo istraživačko pitanje ista je prethodnom. \  
+Pogledajmo koje sve kategorije gostiju postoje.  
 
 ```{r}
 #all different values of "CustomerType" variable
-
+customer_types = unique(data_total_stays$CustomerType)
+customer_types
 ```
-...objašnjenja što je koja kategorija gosta...
+Iz priloženog možemo vidjeti da postoji 4 različitih kategorija gostiju, prema tome, uzimamo 4 podskupova podataka i uspoređujemo njihove aritmetičke sredine duljine trajanja boravka (varijabla "TotayStays").  
+
+Za dati odgovor na istraživačko pitanje koristit ćemo se jednofaktorskim ANOVA modelom.
+
+Provjeravamo jesu li zadovoljene predpostavke ANOVE (za provjeru predpostavke normalnosti koristimo se Lillieforsovom inačicom KS testa, a za provjeru predpostavke homogensoti varijanca koristimo se Bartlettovim testom).
 
 ```{r}
-#calculating average "TotalStays" for every customer type
+#normality check
+require(nortest)
 
-
-#plotting data...
-
+lillie.test(data_total_stays[data_total_stays$CustomerType == "Transient", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$CustomerType == "Contract", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$CustomerType == "Transient-Party", ]$TotalStays)
+lillie.test(data_total_stays[data_total_stays$CustomerType == "Group", ]$TotalStays)
 ```
+Iznimno malene p-vrijednosti nam govore kako podaci nisu normalno distribuirani.\ 
+Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na predpostavku normalnosti.
 
-Iz priloženog možemo vidjeti da je prosječna duljina boravka najduža ...., a najkraća ....
+```{r}
+# variance homogenity check
+data_total_stays$CustomerType <- factor(data_total_stays$CustomerType)
+
+# Check the number of observations in each group
+group_counts <- table(data_total_stays$CustomerType)
+valid_groups <- names(group_counts[group_counts >= 2])
+
+#If there is at least two oservations in the group, proceed
+filtered_data <- subset(data_total_stays, CustomerType %in% valid_groups)
+
+#Bartlettovim test
+bartlett.test(filtered_data$TotalStays ~ filtered_data$CustomerType)
+```
+Zbog malene p-vrijednosti odbacujemo homogenost varijanci, što prikazujemo i grafički. 
 
 ```{r}
 #box and whisker plot --> mean, rangs, median, variances....
+library(ggplot2)
 
+# Assuming filtered_data$CustomerType is a factor
+filtered_data$CustomerType <- factor(filtered_data$CustomerType)
+
+# Create a boxplot using ggplot2
+ggplot(filtered_data, aes(x = CustomerType, y = TotalStays)) +
+  geom_boxplot(fill = "skyblue", color = "black") +
+  labs(title = "Total Stays by Customer Type",
+       x = "Customer Type",
+       y = "Total Stays") +
+  theme_minimal()
 ```
-... komentar na box and whisker plot...
-
-Zanima postoji li povezanost između duljine boravka i kategorije gosta na razini značajnosti od 5%. 
+Dani podaci o distibuciji koja nije normalna i nehomogenosti varijanci navodi nas na zaključak da prosječna duljina boravka varira ovisno o tipu gosta, a to ćemo sada i testirati jednoparametarskom ANOVOM. 
 
 Naša testne hipoteze biti će: \       
-H_0: Prosječna duljina boravka jednaka je za sve tipove gostiju. \    
-H_1: Za barem jednu kategoriju gosta prosječna duljina boravka različita je od ostalih. \    
+$$ \begin{aligned}
+  H_0 & : \text{prosječna duljina boravka jednaka je za sve tipove gostiju } \\
+  H_1 & : \text{za barem jedan tip gosta prosječna duljina boravka različita je no u ostalih}
+\end{aligned} $$
 
-Test koji koristimo za ispirivanje ove hipoteze je ANOVA.
-
-```{r ANOVA gost}
+```{r ANOVA customers}
 #ANOVA
-
+a = aov(filtered_data$TotalStays ~ filtered_data$CustomerType)
+summary(a)
 ```
 Zaključak: \    
-.......
+Na temelju malene p-vrijednosti odbacujemo nultu hipotezu u korist altervativne hipoteze: **postoje razlike u duljini trajanja boravka ovisno o tipu gosta.**
 
 Diskusija: \    
-.......
+Kao što smo i mogli naslutiti, duljina boravka gosta varira s obzirom na različite parametre. Najdulji prosječni boravak jest ljeti, a duljina boravka varira i zavisno od tipa iznajmljene sobe te kategorije gosta. 
 
-............. ZAKLJUČNA DISKUSIJA ZA CIJELI CASE STUDY ...............
 \newpage
 
 # Case study: CIJENE
@@ -351,3 +429,131 @@ Na temelju vrlo male P-vrijednosti(p-value < 2.2e-16), odbacujemo H0 u korist H1
 \newpage
 
 # Case study: SKUPINE GOSTIJU IZ RAZLIČITIH ZEMALJA
+
+\newpage
+
+# Case study: OBITELJI S DJECOM 
+
+Zanimaju nas obrasci ponašanja obitelji s djecom poput: koji tip sobe obitelji s djecom najčešće iznajmljuju, imaju li takvi gosti više posebnih zahtjeva naspram ostalih gostiju...
+
+Kako bismo u nastavku zadatka mogli odgovoriti na postavljena pitanja, najprije ćemo postojeći dataset filtrirati i prilagoditi. 
+
+```{r family dataset}
+library(dplyr)
+
+families = data_total_stays %>%
+  filter(Adults > 0, Children >= 0, Babies > 0 | Adults > 0, Children > 0, Babies >= 0)
+```
+
+## Postoji li razlika u popularnosti traženih tipova soba s obzirom na broj djece koje obitelj ima?
+
+Uvodimo novu varijablu koja obuhvaća i djecu i bebe i nazivamo ju "TotalNonAdults".
+
+```{r children variable}
+library(dplyr)
+
+families_children_num = families %>%
+  mutate(TotalNonAdults = Children + Babies)
+```
+
+Možemo naslutiti da će postojati razlika u popularnosti traženih tipova soba kod obitelji koje, primjerice, ima jedno dijete naspram obitelji koje imaju troje ili više djece. 
+
+Naše hipoteze glase: \       
+$$ \begin{aligned}
+  H_0 & : \text{u svim tipovima soba su prosječno podjednako velike obitelji} \\
+  H_1 & : \text{u barem jednom tipu sobe prosječna veličina obitelji je drugačija no u ostalih}
+\end{aligned} $$
+
+Ova problematika može se testirati ANOVOM, no ANOVA ima predpostavke na nezavisnost podataka u urozku, normalnu distribuciju i  homogenost varijanci.  \    
+Želimo izbjeći predpostavku da je uzorak iz populaicje normalne distribucije pa ćemo se u testiranju hipoteze poslužiti Kruskal-Wallisovim testom. 
+
+```{r kruskal-wallis rooms}
+#KRUSKAL-WALLIS
+kruskal.test(families_children_num$TotalNonAdults ~ families_children_num$ReservedRoomType)
+```
+Iz rezultata provedenog testa možemo vidjeti malenu p-vrijednost što nalaže odbacivanje nulte hipoteze u korist alternativne hipoteze.\          
+
+Zaključak: \            
+U barem jednom tipu sobe prosječna veličina obitelji je drugačija no u ostalih, što možemo sročiti i tako da postoji razlika u popularnosti traženih tipova soba s obzirom na broj djece koje obitelj ima, kao što smo i predpostavili. 
+
+## Postoji li razlika u količini posebnih zahtjeva s obzirom na broj djece koje obitelj ima?
+
+Postupak dolaženja do zaključka isti je kao u prethodnom primjeru, kako bismo izbjegli predpostavku normalnosti normalne distribucije populacije poslužiti ćemo se Kruskal-Wallisovim testom.
+
+Naše hipoteze glase: \ 
+$$ \begin{aligned}
+  H_0 & : \text{prosječni broj posebnih zahtjeva ne razlikuje se s obzirom na broj članova obitelji} \\
+  H_1 & : \text{za barem jedan broj članova obitelji, prosječni broj posebnih zahtjeva je drugačiji}
+\end{aligned} $$
+
+```{r kruskal-wallis special requests}
+#KRUSKAL-WALLIS
+kruskal.test(families_children_num$TotalNonAdults ~ families_children_num$TotalOfSpecialRequests)
+```
+Iz rezultata provedenog testa možemo vidjeti malenu p-vrijednost što nalaže odbacivanje nulte hipoteze u korist alternativne hipoteze.
+
+Zaključak: \                
+U ovisno o veličini obitelji, mijenja se i prosječni broj posebnih zahtjeva što možemo sročiti i tako da postoji razlika u količini posebnih zahtjeva s obzirom na broj djece koje obitelj ima. 
+
+\newpage
+
+# Case study: USPOREDBA LJETNIH SEZONA
+
+ADR ("Average daily rate index") je glavni identifikator hotelijesko-turističke djelatnosti kojim se mjeri prosječna zarada po svakoj iznajmljenoj sobi u određenoj perodu vremena. To je omjer ukupnog prihoda hotela i broja iznajmljenih soba. Vrlo je važan kako bi hoteli znali odrediti svoju poslovnu i financijsku strategiju za budućnost. Viši ADR bi značio da hotel generira više prihoda po sobi, što može biti znak dobrog poslovanja. 
+
+## Je li ljetna sezona 2017. bila profitabilnija hotelima nego ljetna sezona 2016.?
+
+Kako bismo dobili odgovor na ovo pitanje poslužit ćemo se prethodno opisanim parametrom, ADR-om, kao indikatorom uspješnosti poslovanja hotela.
+
+``` {r subsets}
+#creating utility datasets
+#summer 2016 data
+summer_2016 = rbind(data[data$ArrivalDateMonth == "June",], 
+               data[data$ArrivalDateMonth == "July",], 
+               data[data$ArrivalDateMonth == "August",])
+summer_2016 = summer_2016[summer_2016$ArrivalDateYear == 2016, ]
+
+  
+#summer 2017 data
+summer_2017 = rbind(data[data$ArrivalDateMonth == "June",], 
+               data[data$ArrivalDateMonth == "July",], 
+               data[data$ArrivalDateMonth == "August",])
+summer_2017 = summer_2017[summer_2017$ArrivalDateYear == 2017, ]
+```
+
+```{r }
+#plotting data
+#histogram of difference
+hist(summer_2016$ADR - summer_2017$ADR,
+     main=paste('Histogram of ADR in 2016 - 2017'),
+     xlab='Difference of overall score')
+#qq-plot for overall ADR
+qqnorm(summer_2016$ADR - summer_2017$ADR, 
+       pch = 1, 
+       frame = FALSE, 
+       main=paste('QQ-plot for overall score of ADR'))
+qqline(summer_2016$ADR - summer_2017$ADR, 
+       col = "steelblue", lwd = 2)
+```
+Iz vizualizacije razlika možemo naslutiti normalnost podataka, dok iz qq-plota vidimo tek malo odstupanje lijevog repa i desnog repa, uz normalnost podataka. 
+
+Naša hipoteze su sljedeće: \       
+$$ \begin{aligned}
+  H_0 & : \text{ljetne sezone su jednako profitabilne} \\
+  H_1 & : \text{sezona 2017. profitabilnija je od ljetne sezone 2016.}
+\end{aligned} $$
+
+```{r two sample t}
+t.test(summer_2016$ADR, 
+       summer_2017$ADR, 
+       alt = "less")
+```
+Rezultati t-testa nalažu nam odbacivanje nulte hipoteze u korist alternativne hipoteze. \           
+
+Zaključak: \            
+2017. je hotelima bila profitabilnija godina, što smo mogli zaključiti i iz prikazanih histograma.  
+
+\newpage
+
+
+
