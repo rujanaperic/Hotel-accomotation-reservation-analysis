@@ -218,6 +218,132 @@ Diskusija: \
 
 # Case study: PANSION, POLUPANSION
 
+"Je li vrsta uplaćenog obroka (pansion, polupansion) povezana s kategorijama kupaca?"
+
+### Opis traženih atributa
+
+Vrstu uplaćenog obroka vidimo pod "Meal"
+
+```{r}
+meals <- data$Meal
+levels(factor(data$Meal))
+table(meals)
+```
+Značenja kratica:
+
+BB -> Samo doručak
+FB -> Polupansion
+HB -> Puni pansion 
+SC -> Bez hotelskih obroka ("Self-Catering")
+Undefined -> Nije definirano
+
+Vrstu kategorija kupaca vidimo pod "CustomerType"
+
+```{r}
+types <- data$CustomerType
+levels(factor(data$CustomerType))
+table(types)
+```
+
+Contract -> primjeri: poslovna putovanja, rezervacije za konferencije ili događaje
+
+Group -> primjeri: turističke grupe, konferencijski timovi, sportski timovi
+
+Transient -> primjeri: individualni putnici, turisti koji putuju sami
+
+Transient-Party -> primjeri: Grupe prijatelja ili obitelji koje putuju zajedno, ali nisu rezervirale kao formalna grupa
+
+## Je li vrsta uplaćenog obroka (pansion, polupansion) povezana s kategorijama kupaca?
+
+Kopirajmo najprije podatke u novi data.frame kako ne bi promijenili prave vrijednosti
+
+```{r}
+data_copy <- data
+```
+
+Kontingencijsku tablicu jedne kategorijske varijable moguće je dobiti pozivanjem funkcije `table()`
+
+```{r}
+tbl = table(data_copy$Meal)
+print(tbl)
+```
+
+Pogledajmo kontingencijsku tablicu varijabli obroka i kategorija kupaca
+
+```{r}
+tbl = table(data_copy$Meal, data_copy$CustomerType)
+tbl
+```
+
+Kontingencijskoj tablici možemo dodati i sume redaka i stupaca na sljedeći način.
+
+```{r}
+added_margins_tbl = addmargins(tbl)
+print(added_margins_tbl)
+```
+
+Test nezavisnosti $\chi^2$ test u programskom paketu R implementiran je u funkciji `chisq.test()` koja kao ulaz prima kontingencijsku tablicu podataka koje testiramo na nezavisnost. Ispitajmo nezavisnost pozicije igrača na terenu i njegove preferirane noge za udarce.
+
+Pretpostavka testa je da očekivana frekvencija pojedinog razreda mora biti veća ili jednaka 5 (`chisq.test()` pretpostavlja da je ovaj uvjet zadovoljen stoga je prije provođenja testa potrebno to provjeriti).
+
+```{r}
+for (col_names in colnames(added_margins_tbl)){
+  for (row_names in rownames(added_margins_tbl)){
+    if (!(row_names == 'Sum' | col_names == 'Sum') ){
+      cat('Očekivane frekvencije za razred ',col_names,'-',row_names,': ',(added_margins_tbl[row_names,'Sum'] * added_margins_tbl['Sum',col_names]) / added_margins_tbl['Sum','Sum'],'\n')
+    }
+  }
+}
+```
+Vidimo mogući problem:
+"Očekivane frekvencije za razred  Group - FB        :  3.856655"
+
+$\chi^2$ test zahtjeva frekvencije veće od 5, pa ćemo trebati izostaviti ovaj razred na neki način.
+FB sadrži malen broj podataka, tako da bi mogao biti izostavljen potpuno.
+
+Također smatramo da bi bilo dobro izostaviti varijable "Undefined" jer predstavljaju nepoznanicu koju je teško interpretirati.
+
+Odluka je maknuti Undefined i FB iz kategorije Meals.
+
+```{r}
+cat("Kontingencijska tablica prije: \n")
+table(data_copy$Meal)
+
+cat("\n-----------------------------------\n")
+data_modified <- data_copy[trimws(data_copy$Meal) != "Undefined" & trimws(data_copy$Meal) != "FB", ]
+
+cat("Kontingencijska tablica poslije: \n")
+table(data_modified$Meal)
+```
+
+Ponovimo prethodni postupak na data_modified
+
+```{r}
+tbl <- table(data_modified$Meal, data_modified$CustomerType)
+tbl
+```
+
+```{r}
+added_margins_tbl = addmargins(tbl)
+added_margins_tbl
+```
+```{r}
+for (col_names in colnames(added_margins_tbl)){
+  for (row_names in rownames(added_margins_tbl)){
+    if (!(row_names == 'Sum' | col_names == 'Sum') ){
+      cat('Očekivane frekvencije za razred ',col_names,'-',row_names,': ',(added_margins_tbl[row_names,'Sum'] * added_margins_tbl['Sum',col_names]) / added_margins_tbl['Sum','Sum'],'\n')
+    }
+  }
+}
+```
+Sada vidimo da su sve frekvencije zadovoljavajuće, te nemamo nepoznanica.
+Možemo nastaviti sa $\chi^2$ testom.
+
+```{r}
+chisq.test(tbl,correct=F)
+```
+Na temelju vrlo male P-vrijednosti(p-value < 2.2e-16), odbacujemo H0 u korist H1 koja kaže da su vrsta obroka i kategorija gosta zavisni podaci.
+
 \newpage
 
 # Case study: OTKAZIVANJE REZERVACIJA
