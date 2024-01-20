@@ -422,11 +422,12 @@ chisq.test(tbl,correct=F)
 ```
 Na temelju vrlo male P-vrijednosti(p-value < 2.2e-16), odbacujemo H0 u korist H1 koja kaže da su vrsta obroka i kategorija gosta zavisni podaci.
 
-# Case study: OTKAZIVANJE REZERVACIJA
-
 \newpage
 
-# Prikaz omjera otkazanih rezervacija
+# Case study: OTKAZIVANJE REZERVACIJA
+
+## Prikaz omjera otkazanih rezervacija
+
 ```{R}
 library(ggplot2)
 
@@ -442,8 +443,12 @@ ggplot(data, aes(x = factor(IsCanceled))) +
 
 ```
 
-Kroz ovaj prikaz možemo vidjeti ukupan broj otkazanih i ne-otkazanih rezervacija za priložne podatke.
-Otkazanih rezervacija je bilo: 44224 od ukupno 119390. Ovo znači da je 37.04% ukupnih rezervacija otkazano. Zanima nas ima li korelacije nekih parametara iz naših podataka sa otkazivanjem rezervacija. Koristimo model linearne regresije s obzirom da nam regresijska analiza omogućuje zaključivanje i predviđanje jedne varijable na temelju jedne ili više varijabli te mjerenje utjecaja jedne ili više varijabli s obzirom na ostale. U našem slučaju ovisna variajbla će biti IsCanceled varijabla koja nam govori jesu li rezervacije otazane. Pregledom liste svih varijabli odabrali smo varijable za koje smatramo da će imati najveći učinak na otkazivanje te će nam one činit neovisne varijable. Odabrane varijable su:
+Kroz ovaj prikaz možemo vidjeti ukupan broj otkazanih i ne-otkazanih rezervacija za priložne podatke.\        
+
+Otkazanih rezervacija je bilo: 44224 od ukupno 119390. Ovo znači da je 37.04% ukupnih rezervacija otkazano. Zanima nas ima li korelacije nekih parametara iz naših podataka sa otkazivanjem rezervacija. \        
+Koristimo regresijske metode s obzirom da nam regresijska analiza omogućuje zaključivanje i predviđanje jedne varijable na temelju jedne ili više varijabli, te mjerenje utjecaja jedne ili više varijabli s obzirom na ostale. \        
+
+U našem slučaju ovisna variajbla će biti IsCanceled varijabla koja nam govori jesu li rezervacije otazane. Pregledom liste svih varijabli odabrali smo varijable za koje smatramo da će imati najveći učinak na otkazivanje te će nam one činit neovisne varijable. Odabrane varijable su:
 
 \begin{itemize}
     \item LeadTime (Vrijeme od trenutka rezervacije do rezervacije)
@@ -451,7 +456,8 @@ Otkazanih rezervacija je bilo: 44224 od ukupno 119390. Ovo znači da je 37.04% u
     \item Previous booking not cancled
 \end{itemize}
 
-\textbf{Lead Time}
+### Lead Time            
+
 Prvo pitanje koje postavljamo je ima li broj LeadTime utjecaja na otkazivanje rezervacije?
 
 ```{R}
@@ -468,21 +474,23 @@ Iz prikaza modela se da naslutiti da ima. Možemo primjetiti da veće vrijednost
 logisticLT <- glm(formula = IsCanceled ~ LeadTime, family = "binomial", data = data)
 summary(logisticLT)
 ```
+
 Objašnjenje dobivenog:
 
-Estimate
+Estimate \            
 Ovo predstavlja veličinu učinka svakog prediktora.
 
-Standardna pogreška
+Standardna pogreška \           
 Mjerena standardna devijacija procijenjenog koeficijenta koja odražava koliko precizno model procjenjuje vrijednost koeficijenta.
 
-z-vrijednost
+z-vrijednost  \           
 Izračunat kao koeficijent podijeljen sa svojom standardnom pogreškom. Koristi se za testiranje nulte hipoteze.
 
-p-vrijednost
+p-vrijednost \        
 P-vrijednost označava vjerojatnost opažanja podataka ako je nulta hipoteza istinita. Niža p-vrijednost sugerira da je nulta hipoteza manje vjerojatna.
 
-Ovime vidimo da model predviđa da će logaritamski izgledi osnovnog ishoda biti -1.166e+00 kada su svi prediktori 0. P-vrijednost od <2e-16 ukazuje da LeadTime utječe na otkazivanje rezervacija na statističkoj razini od 0.05 (5%) i 0.01 (1%)
+Ovime vidimo da model predviđa da će logaritamski izgledi osnovnog ishoda biti -1.166e+00 kada su svi prediktori 0.\         
+P-vrijednost od <2e-16 ukazuje da LeadTime utječe na otkazivanje rezervacija na statističkoj razini od 0.05 (5%) i 0.01 (1%)
 
 Predikcije možemo dobiti od prediktora uvrštavanjme u formulu:
 
@@ -496,7 +504,7 @@ gdje je x broj dana prošao od rezervacije.
 
 Ovo također možemo dobiti i kroz program R na sljedeći način:
 
-```{R}
+```{r}
 # Napravimo novi podatkovni okvir s varijablama predviđanja za koje želimo predvidjeti
 new_data <- data.frame(LeadTime = c(0, 100, 200, 400))
 # Koristimo funkciju za predviđanje
@@ -505,9 +513,10 @@ predicted_probabilities <- predict(logisticLT, newdata = new_data, type = "respo
 print(predicted_probabilities)
 
 ```
-Samim time možemo zaključiti da LeadTime utječe na otkazivanje rezervacija. Odnosno rezervacije rezervirane za daleko u budućnost imaju veću šansu za otkazivanje.
+Samim time možemo zaključiti da LeadTime utječe na otkazivanje rezervacija. Odnosno rezervacije **rezervirane za daleko u budućnost imaju veću šansu za otkazivanje.**
 
-\textbf{Previous Cancelations}
+### Previous Cancelations
+
 Nastavljamo sa promatranjem varijable Previous Cancelations. Ponavljamo postupke iz prošle analize.
 
 ```{R}
@@ -526,12 +535,13 @@ logisticPC <- glm(formula = IsCanceled ~ PreviousCancellations, family = "binomi
 summary(logisticPC)
 ```
 
-Ovo nam potvrđuju i dobiveni podatci. Model predviđa da će logaritamski izgledi osnovnog ishoda biti -0.642251 kada su svi prediktori 0. P-vrijednost od <2e-16 ukazuje da PreviousCancellations utječe na otkazivanje rezervacija na statističkoj razini od 0.05 (5%) i 0.01 (1%). 
+Ovo nam potvrđuju i dobiveni podatci. Model predviđa da će logaritamski izgledi osnovnog ishoda biti -0.642251 kada su svi prediktori 0. \        
+P-vrijednost od <2e-16 ukazuje da PreviousCancellations utječe na otkazivanje rezervacija na statističkoj razini od 0.05 (5%) i 0.01 (1%). 
 
-Odnosno sa brojem prijašnjih otkazanih rezervacija raste šansa za otkazivanjem budućih rezervacija.
+Odnosno **sa brojem prijašnjih otkazanih rezervacija raste šansa za otkazivanjem budućih rezervacija.**
 
 
-\textbf{Previous bookings not canceled}
+### Previous bookings not canceled
 
 Nastavljamo sa promatranjem varijable Previous bookings not canceled.Ponavljamo postupke iz prošlih analiza.
 
@@ -551,20 +561,22 @@ logisticPC <- glm(formula = IsCanceled ~ PreviousBookingsNotCanceled, family = "
 summary(logisticPC)
 ```
 
-Ovo nam opet potvrđuju dobiveni podatci. Model predviđa da će logaritamski izgledi osnovnog ishoda biti -0.505722 kada su svi prediktori 0. P-vrijednost od <2e-16 ukazuje da PreviousBookingsNotCanceled utječu na otkazivanje rezervacija na statističkoj razini od 0.05 (5%) i 0.01 (1%).
+Ovo nam opet potvrđuju dobiveni podatci. Model predviđa da će logaritamski izgledi osnovnog ishoda biti -0.505722 kada su svi prediktori 0. \       
+P-vrijednost od <2e-16 ukazuje da PreviousBookingsNotCanceled utječu na otkazivanje rezervacija na statističkoj razini od 0.05 (5%) i 0.01 (1%).
  
 Što daje naslutiti da je šansa za otkazivanje manja u ljudi koji su imali prijašnje ne otkazane rezervacije.
 
 \textbf{Zaključak:}
 
-Model logističke regresije snažan je alat koji nam daje uvid u ovisnost komponenti te mogućnost predikcije ukoliko postoji neka korelacija. Ovo nam u konkretnom slučaju sa otkazivanjem rezervacija koristi na način da putem predikcija možemo naslutiti na moguća otkazivanja u slučaju riskantnih rezervacija te poduzimanja koraka koji bi mogli smanjiti taj broj. Npr. u slučaju rezervacija s velikim Lead time varijablama možemo overbookirati te termine ili ih ne overbokirati u slučaju velikih previous bookings not canceled varijabli. Također bi se mogle uvesti naknade za otkazivanje za ljude sa velikim brojem prijašnjih otkazivanja s obzirom da je rizik za otkazivanje kod njih veći.
+Model logističke regresije snažan je alat koji nam daje uvid u ovisnost komponenti te mogućnost predikcije ukoliko postoji neka korelacija. \       
+Ovo nam u konkretnom slučaju koristi na način da putem predikcija možemo naslutiti na moguća otkazivanja u slučaju riskantnih rezervacija te poduzimanja koraka koji bi mogli smanjiti taj broj. \        
+Npr. u slučaju rezervacija s velikim Lead time varijablama možemo "overbookirat" te termine ili ih ne "overbokirat" u slučaju velikih "previous bookings not canceled" varijabli. Također bi se mogle uvesti naknade za otkazivanje za ljude sa velikim brojem prijašnjih otkazivanja s obzirom da je rizik za otkazivanje kod njih veći.
 
-```{R}
-```
+\newpage
 
 # Case study: SKUPINE GOSTIJU IZ RAZLIČITIH ZEMALJA
 
-# ADR (Avrage daily rate)
+## ADR (Avrage daily rate)
 
 Zanima nas možemo li povezati dnevnu potrošnju sa porjeklom zemlje gosta.
 
@@ -574,11 +586,11 @@ Prvo pregledavamo iz kojih sve gosti zemalja uopće dolaze.
 allCountries = unique(data$Country)
 allCountries
 ```
-Primjećujemo da su gosti iz 178 zemlaja te uspoređujemo njihove aritmetičke sredine dnevne potrošnje (varijabla "ADR").  
 
+Primjećujemo da su gosti iz 178 zemlaja te uspoređujemo njihove aritmetičke sredine dnevne potrošnje (varijabla "ADR").  \        
 Kako bi vidjeli možemo li povezati dnevnu potrošnju sa porjeklom zemlje, koristit ćemo se jednofaktorskim ANOVA modelom.
 
-Predpostavke ANOVE su u ovom projektu već navedene u analizi koja se bavila sa trajanjima boravka gostiju
+Predpostavke ANOVE su u ovom projektu već navedene u analizi koja se bavila sa trajanjima boravka gostiju. \        
 
 Kako nam veličine grupa nisu podjednake, radimo provjeru normalnosti Lillieforsovom inačicom Kolmogorov-Smirnovljenog testa. Ovaj test zahtjeva minimalnu veličinu uzorka od 4, stoga transformiramo podatke da dobijemo samo države koje iz kojih su došle 4 ili više osoba. 
 
@@ -591,7 +603,7 @@ validCountries
 
 Razmatrat ćemo zemlju kao varijablu koja određuje grupe i ukupnu duljinu boravka kao zavisnu varijablu. 
 
-```{r test predpostavki - normalnost}
+```{r}
 library(nortest)
 
 # Print the results
@@ -601,13 +613,13 @@ for (country in validCountries) {
 }
 
 ```
-na temelju p-vrijednosti u našim rezultatima primjećujemo:
+Na temelju p-vrijednosti u našim rezultatima primjećujemo:\       
 
-Mnoge zemlje imaju p-vrijednosti manje od 0,05, što ukazuje da podaci o ADR-u za te zemlje ne slijede normalnu distribuciju. Na primjer, zemlje poput ARE, ARG, BEL, BRA, CHN, COL, DEU, ESP, FRA, GBR, IND, ITA, JPN, MEX, NLD, NOR, PRT i SAD sve imaju p-vrijednosti manje od 0,05.
+Mnoge zemlje imaju p-vrijednosti manje od 0,05, što ukazuje da podaci o ADR-u za te zemlje ne slijede normalnu distribuciju. Na primjer, zemlje poput ARE, ARG, BEL, BRA, CHN, COL, DEU, ESP, FRA, GBR, IND, ITA, JPN, MEX, NLD, NOR, PRT i SAD sve imaju p-vrijednosti manje od 0,05.\       
 
-Neke zemlje imaju p-vrijednosti veće od 0,05, što sugerira da podaci o ADR-u za te zemlje mogu razumno odgovarati normalnoj distribuciji. Na primjer, ALB, AND, BGR, BHR, CIV, CMR, CPV, CRI, CYP i drugi imaju p-vrijednosti veće od 0,05.
+Neke zemlje imaju p-vrijednosti veće od 0,05, što sugerira da podaci o ADR-u za te zemlje mogu razumno odgovarati normalnoj distribuciji. Na primjer, ALB, AND, BGR, BHR, CIV, CMR, CPV, CRI, CYP i drugi imaju p-vrijednosti veće od 0,05. \       
 
-Važno je napomenuti da niska p-vrijednost ne znači nužno da podaci nisu korisni ili nevažeći; to jednostavno sugerira da podaci možda ne slijede normalnu distribuciju
+Važno je napomenuti da niska p-vrijednost ne znači nužno da podaci nisu korisni ili nevažeći; to jednostavno sugerira da podaci možda ne slijede normalnu distribuciju. \       
 Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na predpostavku normalnosti. Dobro tolerira odstupanja od normalne distribucije. 
 
 Što se tiče homogenosti varijanci različitih populacija, potrebno je testirati:
@@ -617,7 +629,7 @@ $$ \begin{aligned}
 \end{aligned} $$
 Navedenu hipotezu možemo testirati Bartlettovim testom. 
 
-```{r test pretpostavki - homogenost varijanci}
+```{r}
 
 filteredDataCountries <- subset(data, Country %in% validCountries)
 
@@ -627,71 +639,6 @@ bartlett.test(filteredDataCountries$ADR ~ filteredDataCountries$Country)
 
 Na temelju rezultata Bartlettovog testa, čini se da varijance varijable "ADR" nisu jednake među različitim zemljama. Ovo sugerira da postoje značajne razlike u varijabilnosti "ADR" vrijednosti u zemljama koje smo testirali. Ovo je grafički prikazano u nastavku. 
 
-```{r plotting}
-#box and whisker plot --> mean, rangs, median, variances....
-library(ggplot2)
-
-# Create a list to store the individual plots
-plot_list <- list()
-
-# Split the unique countries into groups of 5
-unique_countries <- unique(filteredDataCountries$Country)
-grouped_countries <- split(unique_countries, ceiling(seq_along(unique_countries) / 5))
-
-# Iterate through groups of 5 countries and create a separate plot for each group
-for (group in grouped_countries) {
-  # Check if "PRT" is in the current group
-  if ("PRT" %in% group) {
-    # If "PRT" is present, create a plot only for "PRT"
-    group_data_ptr <- subset(filteredDataCountries, Country == "PRT")
-    
-    plot_ptr <- ggplot(group_data_ptr, aes(x = Country, y = ADR)) +
-      geom_boxplot(fill = "skyblue", color = "black") +
-      labs(title = "Total Stays by Country",
-           x = "Country",
-           y = "ADR") +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))  # Rotate x-axis labels
-    
-    plot_list[["PRT"]] <- plot_ptr
-
-    
-    # Create a plot for the other countries in the group
-    group_data_other <- subset(filteredDataCountries, Country %in% group[-which(group == "PRT")])
-    
-    plot_other <- ggplot(group_data_other, aes(x = Country, y = ADR)) +
-      geom_boxplot(fill = "skyblue", color = "black") +
-      labs(title = "Total Stays by Country",
-           x = "Country",
-           y = "ADR") +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))  # Rotate x-axis labels
-    
-    plot_list[[paste(group, collapse = ", ")]] <- plot_other
-  } else {
-    # If "PTR" is not present, create a plot for all countries in the group
-    group_data <- subset(filteredDataCountries, Country %in% group)
-    
-    plot <- ggplot(group_data, aes(x = Country, y = ADR)) +
-      geom_boxplot(fill = "skyblue", color = "black") +
-      labs(title = "Total Stays by Country",
-           x = "Country",
-           y = "ADR") +
-      theme_minimal() +
-      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))  # Rotate x-axis labels
-    
-    plot_list[[paste(group, collapse = ", ")]] <- plot
-
-  }
-}
-
-# Display all plots
-for (group in names(plot_list)) {
-  print(plot_list[[group]])
-}
-```
-
-
 Dani podaci o distibuciji koja nije normalna i nehomogenosti varijanci navodi nas na zaključak da ADR varira ovisno o zemlji porjekla osobe, a to ćemo sada testirati. 
 
 Naša testne hipoteze biti će: \       
@@ -700,7 +647,7 @@ $$ \begin{aligned}
   H_1 & : \text{za barem jednu osobu sa različitim porjeklom prosječni ADR je različita od ostalih}
 \end{aligned} $$
 
-```{r ANOVA rooms}
+```{r}
 #ANOVA
 a = aov(filteredDataCountries$ADR ~ filteredDataCountries$Country)
 summary(a)
@@ -830,6 +777,40 @@ Rezultati t-testa nalažu nam odbacivanje nulte hipoteze u korist alternativne h
 
 Zaključak: \            
 2017. je hotelima bila profitabilnija godina, što smo mogli zaključiti i iz prikazanih histograma.  
+
+## Kako da hoteli u budućnosti budu još profitabilniji?
+
+Da bismo pomogli hotelima u stvaranju još bolje poslovne strategije, ispitati ćemo korelacije nekoliko parametara iz naših podataka sa ADR-om. Za utvrđivanje korelacije koristit ćemo se regresijskim metodama, gdje je kao zavisna varijabla postavljen ADR, a kao nezavisne varijable:
+\begin{itemize}
+    \item "DaysInWaitingList"
+\end{itemize}
+
+Konkretno, u oba slučaja, korelaciju ćemo testirati jednostavnom linearnom regresijom. 
+
+### Days in waiting list
+
+Zanima nas je li broj dana na listi čekanja koreliran sa ADR-om, tj. kada bi gost bio kraće na listi čekanja, bi li hotel bio "profitabilniji"?
+
+```{r}
+
+library(ggplot2)
+
+ggplot(data_total_stays, aes(x = DaysInWaitingList, y = ADR )) +
+  geom_jitter(height = 0.5, alpha = .1) +
+  geom_smooth(method = "lm", se = TRUE) + 
+  ylim(0, 500)
+
+```
+Iz prikaza možemo naslutiti da određena korelacija postoji, no idemo to testirati linearnom regresijom: 
+
+```{R}
+linear_model <- lm(formula = ADR ~ DaysInWaitingList, data = data)
+summary(linear_model)
+```
+Zaključak: \        
+Provedeni test nam govori da će, za povećanje varijable "DaysInWaitingList" za 1, ADR biti promjenjen za -0.117061 (Estimate), sa standardom greškom od 0.008306 (Std. Error). Vjerojatnost da će se dogoditi rezultat jednak ili ekstremniji t-vrijednosti je vrlo blizu nuli, što znači da je parametar "DaysInWaitingList" signifikantan za predviđanje parametra ADR.
+
+Zaključujemo da su ta dva parametra značajno korelirana, te da će **kraće vrijeme na listi čekanja pridonositi većoj profitabilnosti hotela**. 
 
 \newpage
 
