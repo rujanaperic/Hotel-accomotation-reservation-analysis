@@ -125,7 +125,7 @@ Iz priloženog možemo vidjeti da postoji 12 različitih kategorija soba, prema 
 
 Za dati odgovor na istraživačko pitanje koristit ćemo se jednofaktorskim ANOVA modelom.
 
-Predpostavke ANOVE su: \ 
+Pretpostavke ANOVE su: \ 
 - nezavisnost pojedinih podataka u uzorcima \  
 - normalna razdioba podataka \ 
 - homogenost varijanci među populacijama \ 
@@ -149,7 +149,7 @@ lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "B            
 lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "K               ", ]$TotalStays)
 ```
 Iznimno malene p-vrijednosti nam govore kako podaci nisu normalno distribuirani.\ 
-Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na predpostavku normalnosti. Dobro tolerira odstupanja od normalne distribucije. 
+Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na pretpostavku normalnosti. Dobro tolerira odstupanja od normalne distribucije. 
 
 Što se tiče homogenosti varijanci različitih populacija, potrebno je testirati:
 $$ \begin{aligned}
@@ -224,7 +224,7 @@ Iz priloženog možemo vidjeti da postoji 4 različitih kategorija gostiju, prem
 
 Za dati odgovor na istraživačko pitanje koristit ćemo se jednofaktorskim ANOVA modelom.
 
-Provjeravamo jesu li zadovoljene predpostavke ANOVE (za provjeru predpostavke normalnosti koristimo se Lillieforsovom inačicom KS testa, a za provjeru predpostavke homogensoti varijanca koristimo se Bartlettovim testom).
+Provjeravamo jesu li zadovoljene pretpostavke ANOVE (za provjeru pretpostavke normalnosti koristimo se Lillieforsovom inačicom KS testa, a za provjeru pretpostavke homogenosti varijanca koristimo se Bartlettovim testom).
 
 ```{r}
 #normality check
@@ -236,7 +236,7 @@ lillie.test(data_total_stays[data_total_stays$CustomerType == "Transient-Party",
 lillie.test(data_total_stays[data_total_stays$CustomerType == "Group", ]$TotalStays)
 ```
 Iznimno malene p-vrijednosti nam govore kako podaci nisu normalno distribuirani.\ 
-Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na predpostavku normalnosti.
+Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na pretpostavku normalnosti.
 
 ```{r}
 # variance homogenity check
@@ -271,7 +271,7 @@ ggplot(filtered_data, aes(x = CustomerType, y = TotalStays)) +
 ```
 Dani podaci o distibuciji koja nije normalna i nehomogenosti varijanci navodi nas na zaključak da prosječna duljina boravka varira ovisno o tipu gosta, a to ćemo sada i testirati jednoparametarskom ANOVOM. 
 
-Naša testne hipoteze biti će: \       
+Naše testne hipoteze biti će: \       
 $$ \begin{aligned}
   H_0 & : \text{prosječna duljina boravka jednaka je za sve tipove gostiju } \\
   H_1 & : \text{za barem jedan tip gosta prosječna duljina boravka različita je no u ostalih}
@@ -309,11 +309,15 @@ table(meals)
 ```
 Značenja kratica:
 
-BB -> Samo doručak
-FB -> Polupansion
-HB -> Puni pansion 
-SC -> Bez hotelskih obroka ("Self-Catering")
-Undefined -> Nije definirano
+BB -> Samo doručak,
+
+FB -> Polupansion,
+
+HB -> Puni pansion,
+
+SC -> Bez hotelskih obroka ("Self-Catering"),
+
+Undefined -> Nije definirano,
 
 Vrstu kategorija kupaca vidimo pod "CustomerType"
 
@@ -399,9 +403,7 @@ Ponovimo prethodni postupak na data_modified
 ```{r}
 tbl <- table(data_modified$Meal, data_modified$CustomerType)
 tbl
-```
 
-```{r}
 added_margins_tbl = addmargins(tbl)
 added_margins_tbl
 ```
@@ -448,7 +450,7 @@ Kroz ovaj prikaz možemo vidjeti ukupan broj otkazanih i ne-otkazanih rezervacij
 Otkazanih rezervacija je bilo: 44224 od ukupno 119390. Ovo znači da je 37.04% ukupnih rezervacija otkazano. Zanima nas ima li korelacije nekih parametara iz naših podataka sa otkazivanjem rezervacija. \        
 Koristimo regresijske metode s obzirom da nam regresijska analiza omogućuje zaključivanje i predviđanje jedne varijable na temelju jedne ili više varijabli, te mjerenje utjecaja jedne ili više varijabli s obzirom na ostale. \        
 
-U našem slučaju ovisna variajbla će biti IsCanceled varijabla koja nam govori jesu li rezervacije otazane. Pregledom liste svih varijabli odabrali smo varijable za koje smatramo da će imati najveći učinak na otkazivanje te će nam one činit neovisne varijable. Odabrane varijable su:
+U našem slučaju ovisna variajbla će biti IsCanceled varijabla koja nam govori jesu li rezervacije otazane. Pregledom liste svih varijabli odabrali smo varijable za koje smatramo da će imati najveći učinak na otkazivanje te će nam one činiti neovisne varijable. Odabrane varijable su:
 
 \begin{itemize}
     \item LeadTime (Vrijeme od trenutka rezervacije do rezervacije)
