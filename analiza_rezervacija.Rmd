@@ -364,7 +364,7 @@ added_margins_tbl = addmargins(tbl)
 print(added_margins_tbl)
 ```
 
-Test nezavisnosti $\chi^2$ test u programskom paketu R implementiran je u funkciji `chisq.test()` koja kao ulaz prima kontingencijsku tablicu podataka koje testiramo na nezavisnost. Ispitajmo nezavisnost pozicije igrača na terenu i njegove preferirane noge za udarce.
+Test nezavisnosti $\chi^2$ test u programskom paketu R implementiran je u funkciji `chisq.test()` koja kao ulaz prima kontingencijsku tablicu podataka koje testiramo na nezavisnost. Ispitajmo nezavisnost obroka i tipa kupca.
 
 Pretpostavka testa je da očekivana frekvencija pojedinog razreda mora biti veća ili jednaka 5 (`chisq.test()` pretpostavlja da je ovaj uvjet zadovoljen stoga je prije provođenja testa potrebno to provjeriti).
 
@@ -372,7 +372,9 @@ Pretpostavka testa je da očekivana frekvencija pojedinog razreda mora biti već
 for (col_names in colnames(added_margins_tbl)){
   for (row_names in rownames(added_margins_tbl)){
     if (!(row_names == 'Sum' | col_names == 'Sum') ){
-      cat('Očekivane frekvencije za razred ',col_names,'-',row_names,': ',(added_margins_tbl[row_names,'Sum'] * added_margins_tbl['Sum',col_names]) / added_margins_tbl['Sum','Sum'],'\n')
+      cat('Očekivane frekvencije za razred ',col_names,'-',row_names,': ',
+          (added_margins_tbl[row_names,'Sum'] * added_margins_tbl['Sum',col_names])
+          / added_margins_tbl['Sum','Sum'],'\n')
     }
   }
 }
@@ -411,7 +413,9 @@ added_margins_tbl
 for (col_names in colnames(added_margins_tbl)){
   for (row_names in rownames(added_margins_tbl)){
     if (!(row_names == 'Sum' | col_names == 'Sum') ){
-      cat('Očekivane frekvencije za razred ',col_names,'-',row_names,': ',(added_margins_tbl[row_names,'Sum'] * added_margins_tbl['Sum',col_names]) / added_margins_tbl['Sum','Sum'],'\n')
+      cat('Očekivane frekvencije za razred ',col_names,'-',row_names,': ',
+          (added_margins_tbl[row_names,'Sum'] * added_margins_tbl['Sum',col_names])
+          / added_margins_tbl['Sum','Sum'],'\n')
     }
   }
 }
