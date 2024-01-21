@@ -90,7 +90,7 @@ winter_total <- winter %>%
 spring_total <- spring %>%
   mutate(TotalStays = StaysInWeekendNights + StaysInWeekNights)
 ```
-Računamo prosječnu duljinu trajanja boravka za svaki pomoćni skup podataka, rezultat prikazujemo stupičastim dijagramom.  
+Računamo prosječnu duljinu trajanja boravka za svaki pomoćni skup podataka, rezultat prikazujemo stupčastim dijagramom.  
 
 ```{r means by seasons data}
 
@@ -102,7 +102,8 @@ seasons_means_vector = data.frame(
             mean(autumn_total$TotalStays))
 )
 
-barplot(seasons_means_vector$Means, names.arg = seasons_means_vector$Season, col = "skyblue", xlab = "Seasons", ylab = "Average night stays")
+barplot(seasons_means_vector$Means, names.arg = seasons_means_vector$Season, 
+        col = "skyblue", xlab = "Seasons", ylab = "Average night stays")
 
 #binding adjusted data
 data_total_stays = rbind(winter_total, spring_total, summer_total, autumn_total)
@@ -133,7 +134,7 @@ Pretpostavke ANOVE su: \
 Kako nam veličine grupa nisu podjednake, radimo provjeru normalnosti Lillieforsovom inačicom Kolmogorov-Smirnovljenog testa. 
 Razmatrat ćemo tip sobe kao varijablu koja određuje grupe i ukupnu duljinu boravka kao zavisnu varijablu. 
 
-```{r test predpostavki - normalnost}
+```{r test pretpostavki - normalnost}
 require(nortest)
 
 lillie.test(data_total_stays[data_total_stays$AssignedRoomType == "I               ", ]$TotalStays)
@@ -193,7 +194,7 @@ ggplot(filtered_data, aes(x = AssignedRoomType, y = TotalStays)) +
 
 Dani podaci o distibuciji koja nije normalna i nehomogenosti varijanci navodi nas na zaključak da prosječna duljina boravka varira ovisno o tipu iznajmljene sobe, a to ćemo sada testirati. 
 
-Naša testne hipoteze biti će: \       
+Naša testne hipoteze bit će: \       
 $$ \begin{aligned}
   H_0 & : \text{prosječna duljina boravka jednaka je za sve tipove iznajmljenih soba } \\
   H_1 & : \text{za barem jedan tip iznajmljene sobe prosječna duljina boravka različita je no u ostalih}
@@ -220,7 +221,7 @@ Pogledajmo koje sve kategorije gostiju postoje.
 customer_types = unique(data_total_stays$CustomerType)
 customer_types
 ```
-Iz priloženog možemo vidjeti da postoji 4 različitih kategorija gostiju, prema tome, uzimamo 4 podskupova podataka i uspoređujemo njihove aritmetičke sredine duljine trajanja boravka (varijabla "TotayStays").  
+Iz priloženog možemo vidjeti da postoji 4 različitih kategorija gostiju, prema tome, uzimamo 4 podskupa podataka i uspoređujemo njihove aritmetičke sredine duljine trajanja boravka (varijabla "TotayStays").  
 
 Za dati odgovor na istraživačko pitanje koristit ćemo se jednofaktorskim ANOVA modelom.
 
@@ -291,6 +292,195 @@ Kao što smo i mogli naslutiti, duljina boravka gosta varira s obzirom na razli�
 \newpage
 
 # Case study: CIJENE
+```{r}
+suppressWarnings( {
+  library(dplyr)
+  library(ggplot2)
+})
+
+mydata <- data
+```
+
+Postoji li značajna razlika u prosječnim dnevnim cijenama za rezervacije ostvarene putem platformi
+trećih strana u usporedbi s onima izravno ostvarenima s hotelom?
+
+Odgovorimo na ovo pitanje alatima statističke analize.
+
+Trebaju nam varijabla DistributionChannel koja govori na koji način je ostvarena rezervacija te varijabla ADR(average daily rate).
+
+Pogledajmo moguće vrijednosti varijable DistributionChannel i njihove frekvencije:
+
+```{r}
+table(mydata$DistributionChannel)
+```
+Nas zanimaju vrijednost Direct koja označava rezervacije dogovorene direktno s hotelom te vrijednosti GDS(Global Distribution System) i TA/TO(Travel Agents / Tour Operators) koje zajedno čine platforme trećih strana, ne gledamo vrijednosti Undefined i Corporate jer za njih ne možemo znati jesu li rezervacije ostvarene putem treće strane ili direktno s hotelom.
+
+Filtrirajmo podatkovni okvir tako da nam ostanu relevantni podaci, faktorizirajmo varijablu DistributionChannel, stvorimo novi stupac koji će za vrijednost imati "direct" ako je direktna rezervacija, a "third" ako je rezervacija putem treće strane, nazovimo ga status te i njega faktorizirajmo, a potom dodajmo ADR vrijednosti rezervacija putem trećih strana u vektor groupOne i ADR vrijednosti direktnih rezervacija u vektor group2.
+
+```{r}
+mydata <- mydata[mydata$DistributionChannel %in% 
+                   c("Direct", "GDS", "TA/TO"), c("DistributionChannel", "ADR")]
+mydata$DistributionChannel <- factor(mydata$DistributionChannel)
+mydata <- mydata %>% mutate(status = case_when(
+    DistributionChannel == "Direct" ~ "direct",
+    DistributionChannel %in% c("GDS", "TA/TO") ~ "third",
+  ))
+mydata$status <- factor(mydata$status)
+groupOne <- mydata$ADR[mydata$status=="third"]
+group2 <- mydata$ADR[mydata$status=="direct"]
+
+```
+Vizualizirajmo podatke:
+
+```{r}
+boxplot(groupOne, group2, 
+        names = c('Third party ADR','Direct ADR'),
+        main='Boxplot of third party and direct ADR')
+```
+Uočavamo jednog ekstremnog outliera, izbacit ćemo ga iz analize.
+```{r}
+dataset <- mydata[!mydata$ADR>5000,]
+# Nadalje koristimo group1 umjesto groupOne
+group1 <- dataset$ADR[dataset$status=="third"]
+```
+Pogledajmo ponovno boxplot bez ekstremnog outliera:
+```{r}
+boxplot(group1, group2, 
+        names = c('Third party ADR','Direct ADR'),
+        main='Boxplot of third party and direct ADR')
+```
+Još neke obzervacije bismo mogli nazvati outlierima, ali nisu toliko značajni kao onaj prošli pa ih možemo ostaviti.
+
+
+
+
+Možemo uočiti malu razliku u srednjim vrijednostima uzoraka:
+
+```{r}
+suppressWarnings( {
+  ggplot(dataset, aes(x = status, y = ADR)) +
+  geom_bar(stat = "summary", fun = "mean", fill = "skyblue", color = "black") +
+  geom_text(stat = "summary", aes(label = round(after_stat(y), 2)),
+            vjust = -0.5, color = "black", size = 3) +
+  labs(title = "Average ADR",
+       x = "Status",
+       y = "Average ADR") +
+  theme_minimal()
+})
+
+```
+
+Za statističke testove koje trebamo obaviti pretpostavke za populacije iz kohih uzorci dolaze su normalnost i nezavisnost. Nezavisnost možemo pretpostaviti, a normalnost u ovom slučaju možemo grafički procijeniti:
+
+```{r}
+ggplot() +
+  geom_histogram(aes(x = group1, y = after_stat(count)), bins = 30,
+                 color = "white", fill = "skyblue", alpha = 0.7) +
+  stat_function(fun = function(x) dnorm(x, mean = mean(group1),
+                sd = sd(group1)) * length(group1) * diff(range(group1))/30, 
+                color = "red", linewidth = 1) +
+  labs(title = "Histogram of third party ADR with Scaled Normal Distribution Overlay",
+       x = "ADR",
+       y = "Frequency") +
+  theme_minimal()
+```
+```{r}
+ggplot() +
+  geom_histogram(aes(x = group2, y = after_stat(count)), bins = 30,
+                 color = "white", fill = "skyblue", alpha = 0.7) +
+  stat_function(fun = function(x) dnorm(x, mean = mean(group2),
+                sd = sd(group2)) * length(group2) * diff(range(group2))/30, 
+                color = "red", linewidth = 1) +
+  labs(title = "Histogram of direct ADR with Scaled Normal Distribution Overlay",
+       x = "ADR",
+       y = "Frequency") +
+  theme_minimal()
+```
+Normalnost također možemo vizualizirati qqplot-ovima.
+
+```{r}
+qqnorm(group1, pch = 1, frame = FALSE,main='Third party ADR')
+qqline(group1, col = "steelblue", lwd = 2)
+```
+```{r}
+qqnorm(group2, pch = 1, frame = FALSE,main='Direct ADR')
+qqline(group2, col = "steelblue", lwd = 2)
+```
+
+Vidimo da distribucije nisu baš normalne, ali kad uzmemo u obzir da donekle prate normalnu distribuciju i da imamo velike uzorke, možemo se pouzdati u robusnost t-testa i f-testa s obzirom na normalnost koja se postiže s većim uzorcima zbog posljedica centralnog graničnog teorema. To znači da bi ti testovi za veličine uzoraka koje mi imamo i dalje trebali davati relativno precizne rezultate.
+
+Zaključujemo da možemo nastaviti s testovima.
+
+Prvo moramo napraviti f-test da bismo procijenili jesu li varijance populacija jednake ili nisu, a onda s tom informacijom idemo raditi t-test koji nam daje uvid u razliku srednjih vrijednosti populacija.
+
+Prvo provjerimo varijance uzoraka:
+
+Third party ADR variance:
+```{r}
+var(group1)
+```
+
+Direct ADR variance:
+```{r}
+var(group2)
+```
+Iz prethodnog možda možemo naslutiti nejednakost varijanci, ali ipak trebamo provesti f-test.
+
+Ako imamo dva nezavisna slučajna uzorka \(X_{1}, X_{2}, \ldots, X_{n_{1}}\) i \(X_{1}, X_{2}, \ldots, X_{n_{2}}\) koji dolaze iz normalnih distribucija s varijancama \(\sigma_{1}^{2}\) i \(\sigma_{2}^{2}\), tada slučajna varijabla
+
+\[ F = \frac{S_{X_{1}}^{2}/\sigma_{1}^{2}}{S_{X_{2}}^{2}/\sigma_{2}^{2}} \]
+
+ima Fisherovu distribuciju s \((n_{1} - 1, n_{2} - 1)\) stupnjeva slobode, pri čemu vrijedi:
+
+\[ S_{X_{1}}^{2} = \frac{1}{n_{1} - 1} \sum_{i=1}^{n_{1}} (X_{i1} - \overline{X}_{1})^{2}, \quad S_{X_{2}}^{2} = \frac{1}{n_{2} - 1} \sum_{i=1}^{n_{2}} (X_{i2} - \overline{X}_{2})^{2} \]
+
+Hipoteze testa jednakosti varijanci glase:
+
+\[ H_{0}: \sigma_{1}^{2} = \sigma_{2}^{2} \quad \text{protiv} \quad H_{1}: \sigma_{1}^{2} < \sigma_{2}^{2}, \sigma_{1}^{2} > \sigma_{2}^{2}, \sigma_{1}^{2} \neq \sigma_{2}^{2} \]
+
+U programskom paketu R, test o jednakosti varijanci je implementiran u funkciji `var.test()`, koja prima uzorke iz dvije populacije čije varijance uspoređujemo.
+
+Dakle, ispitajmo jednakost varijanci naših danih uzoraka.
+
+Koristimo dvostrani f-test: \[ H_{0}: \sigma_{1}^{2} = \sigma_{2}^{2} \quad \text{protiv}  \quad H_{1}: \sigma_{1}^{2} \neq \sigma_{2}^{2} \]
+
+```{r}
+var.test(group1, group2)
+```
+Izrazito mala p-vrijednost od 2.2e-16 nam govori da ćemo odbaciti hipotezu H0 u korist H1 te da su varijance naša dva uzorka različite. Čini se da je varijanca ADR-a direktnih rezervacija značajno veća od varijance ADR-a third party rezervacija.
+
+Provedimo sada t-test uz pretpostavku nejednakosti varijanci.
+
+Ukoliko imamo dva nezavisna normalno distribuirana uzorka, koji u ovom slučaju dolaze iz populacija s različitim varijancama, tada koristimo testnu statistiku:
+
+\[ T' = \frac{\overline{X}_1 - \overline{X}_2 - (\mu_1 - \mu_2)}{\sqrt{\frac{s^2_{X_1}}{n_1} + \frac{s^2_{X_2}}{n_2}}} \]
+
+koja ima aproksimativnu t-distribuciju sa stupnjevima slobode
+
+\[ v = \frac{\left(\frac{s^2_{X_1}}{n_1} + \frac{s^2_{X_2}}{n_2}\right)^2}{\frac{\left(\frac{s^2_{X_1}}{n_1}\right)^2}{n_1 - 1} + \frac{\left(\frac{s^2_{X_2}}{n_2}\right)^2}{n_2 - 1}} \]
+
+gdje je
+
+\[ s^2_{X_i} = \frac{1}{n_i - 1} \sum_{j=1}^{n_i} (X_{ji} - \overline{X}_i)^2 \]
+
+za \(i = 1,2\).
+
+Hipoteze tada glase:
+
+\[ H_0: \mu_1 = \mu_2 \quad \text{protiv} \quad H_1: \mu_1 < \mu_2, \mu_1 > \mu_2, \mu_1 \neq \mu_2 \]
+
+Test o jednakosti srednjih vrijednosti dvije populacije u R-u je implementiran u funkciji `t.test()`.
+
+Možemo li zaključiti da je prosječni ADR veći za rezervacije ostvarene direktno s hotelom nego za one ostvarene putem platformi trećih strana?
+
+Koristimo jednostrani t-test s za uzorke iz populacija s različitim varijancama:
+
+\[ H_0: \mu_1 = \mu_2 \quad \text{protiv} \quad H_1: \mu_1 < \mu_2 \]
+
+```{r}
+t.test(group1, group2, alt = "less", var.equal = FALSE)
+```
+Zbog jako male p-vrijednosti od 1.03e-10 možemo odbaciti H0 hipotezu o jednakosti prosječnih vrijednosti u korist H1, odnosno možemo reći da je srednji ADR rezervacija ostvarenih direktno s hotelom u prosjeku veći od onog rezervacija ostvarenih putem platformi trećih strana.
 
 \newpage
 
@@ -382,7 +572,7 @@ for (col_names in colnames(added_margins_tbl)){
 Vidimo mogući problem:
 "Očekivane frekvencije za razred  Group - FB        :  3.856655"
 
-$\chi^2$ test zahtjeva frekvencije veće od 5, pa ćemo trebati izostaviti ovaj razred na neki način.
+$\chi^2$ test zahtijeva frekvencije veće od 5, pa ćemo trebati izostaviti ovaj razred na neki način.
 FB sadrži malen broj podataka, tako da bi mogao biti izostavljen potpuno.
 
 Također smatramo da bi bilo dobro izostaviti varijable "Undefined" jer predstavljaju nepoznanicu koju je teško interpretirati.
@@ -443,7 +633,8 @@ non_canceled_count <- total_count-canceled_count
 
 ggplot(data, aes(x = factor(IsCanceled))) +
   geom_bar(width = 0.5) +
-  labs(x = "Reservation Status", y = "Count", title = "Number of Canceled and Non-Canceled Reservations") +
+  labs(x = "Reservation Status", y = "Count",
+       title = "Number of Canceled and Non-Canceled Reservations") +
   scale_x_discrete(labels = c("Non-Canceled", "Canceled")) +
   scale_y_continuous(breaks = seq(0, max(total_count), by = 10000))
 
@@ -549,7 +740,7 @@ Odnosno **sa brojem prijašnjih otkazanih rezervacija raste šansa za otkazivanj
 
 ### Previous bookings not canceled
 
-Nastavljamo sa promatranjem varijable Previous bookings not canceled.Ponavljamo postupke iz prošlih analiza.
+Nastavljamo sa promatranjem varijable Previous bookings not canceled. Ponavljamo postupke iz prošlih analiza.
 
 ```{R}
 library(ggplot2)
@@ -584,7 +775,7 @@ Npr. u slučaju rezervacija s velikim Lead time varijablama možemo "overbookira
 
 ## ADR (Avrage daily rate)
 
-Zanima nas možemo li povezati dnevnu potrošnju sa porjeklom zemlje gosta.
+Zanima nas možemo li povezati dnevnu potrošnju sa porijeklom zemlje gosta.
 
 Prvo pregledavamo iz kojih sve gosti zemalja uopće dolaze.
 
@@ -594,11 +785,11 @@ allCountries
 ```
 
 Primjećujemo da su gosti iz 178 zemlaja te uspoređujemo njihove aritmetičke sredine dnevne potrošnje (varijabla "ADR").  \        
-Kako bi vidjeli možemo li povezati dnevnu potrošnju sa porjeklom zemlje, koristit ćemo se jednofaktorskim ANOVA modelom.
+Kako bismo vidjeli možemo li povezati dnevnu potrošnju s porijeklom zemlje, koristit ćemo se jednofaktorskim ANOVA modelom.
 
-Predpostavke ANOVE su u ovom projektu već navedene u analizi koja se bavila sa trajanjima boravka gostiju. \        
+Pretpostavke ANOVE su u ovom projektu već navedene u analizi koja se bavila trajanjima boravka gostiju. \        
 
-Kako nam veličine grupa nisu podjednake, radimo provjeru normalnosti Lillieforsovom inačicom Kolmogorov-Smirnovljenog testa. Ovaj test zahtjeva minimalnu veličinu uzorka od 4, stoga transformiramo podatke da dobijemo samo države koje iz kojih su došle 4 ili više osoba. 
+Kako nam veličine grupa nisu podjednake, radimo provjeru normalnosti Lillieforsovom inačicom Kolmogorov-Smirnovljenog testa. Ovaj test zahtijeva minimalnu veličinu uzorka od 4, stoga transformiramo podatke da dobijemo samo države koje iz kojih su došle 4 ili više osoba. 
 
 ```{r}
 data$Country <- factor(data$Country)
@@ -607,7 +798,7 @@ validCountries <- names(groupCount[groupCount > 4])
 validCountries
 ```
 
-Razmatrat ćemo zemlju kao varijablu koja određuje grupe i ukupnu duljinu boravka kao zavisnu varijablu. 
+Razmatrat ćemo zemlju kao varijablu koja određuje grupe i ADR kao zavisnu varijablu. 
 
 ```{r}
 library(nortest)
@@ -626,7 +817,7 @@ Mnoge zemlje imaju p-vrijednosti manje od 0,05, što ukazuje da podaci o ADR-u z
 Neke zemlje imaju p-vrijednosti veće od 0,05, što sugerira da podaci o ADR-u za te zemlje mogu razumno odgovarati normalnoj distribuciji. Na primjer, ALB, AND, BGR, BHR, CIV, CMR, CPV, CRI, CYP i drugi imaju p-vrijednosti veće od 0,05. \       
 
 Važno je napomenuti da niska p-vrijednost ne znači nužno da podaci nisu korisni ili nevažeći; to jednostavno sugerira da podaci možda ne slijede normalnu distribuciju. \       
-Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na predpostavku normalnosti. Dobro tolerira odstupanja od normalne distribucije. 
+Usprkos tome, jednofaktorska ANOVA je robusna statistika s obzirom na pretpostavku normalnosti. Dobro tolerira odstupanja od normalne distribucije. 
 
 Što se tiče homogenosti varijanci različitih populacija, potrebno je testirati:
 $$ \begin{aligned}
@@ -645,12 +836,12 @@ bartlett.test(filteredDataCountries$ADR ~ filteredDataCountries$Country)
 
 Na temelju rezultata Bartlettovog testa, čini se da varijance varijable "ADR" nisu jednake među različitim zemljama. Ovo sugerira da postoje značajne razlike u varijabilnosti "ADR" vrijednosti u zemljama koje smo testirali. Ovo je grafički prikazano u nastavku. 
 
-Dani podaci o distibuciji koja nije normalna i nehomogenosti varijanci navodi nas na zaključak da ADR varira ovisno o zemlji porjekla osobe, a to ćemo sada testirati. 
+Dani podaci o distibuciji koja nije normalna i nehomogenosti varijanci navodi nas na zaključak da ADR varira ovisno o zemlji porijekla osobe, a to ćemo sada testirati. 
 
 Naša testne hipoteze biti će: \       
 $$ \begin{aligned}
-  H_0 & : \text{ADR je jednak za osobe neovisno o porjeklu } \\
-  H_1 & : \text{za barem jednu osobu sa različitim porjeklom prosječni ADR je različita od ostalih}
+  H_0 & : \text{ADR je jednak za osobe neovisno o porijeklu } \\
+  H_1 & : \text{za barem jednu osobu sa različitim porijeklom prosječni ADR je različita od ostalih}
 \end{aligned} $$
 
 ```{r}
@@ -659,7 +850,7 @@ a = aov(filteredDataCountries$ADR ~ filteredDataCountries$Country)
 summary(a)
 ```
 Zaključak: \    
-Na temelju malene p-vrijednosti odbacujemo nultu hipotezu u korist altervativne hipoteze: **postoje razlike u ADR ovisno o porjeklu osobe.**
+Na temelju malene p-vrijednosti odbacujemo nultu hipotezu u korist altervativne hipoteze: **postoje razlike u ADR ovisno o porijeklu osobe.**
 
 \newpage
 
@@ -695,8 +886,8 @@ $$ \begin{aligned}
   H_1 & : \text{u barem jednom tipu sobe prosječna veličina obitelji je drugačija no u ostalih}
 \end{aligned} $$
 
-Ova problematika može se testirati ANOVOM, no ANOVA ima predpostavke na nezavisnost podataka u urozku, normalnu distribuciju i  homogenost varijanci.  \    
-Želimo izbjeći predpostavku da je uzorak iz populaicje normalne distribucije pa ćemo se u testiranju hipoteze poslužiti Kruskal-Wallisovim testom. 
+Ova problematika može se testirati ANOVOM, no ANOVA ima pretpostavke na nezavisnost podataka u uzorku, normalnu distribuciju i  homogenost varijanci.  \    
+Želimo izbjeći pretpostavku da je uzorak iz populaicje normalne distribucije pa ćemo se u testiranju hipoteze poslužiti Kruskal-Wallisovim testom. 
 
 ```{r kruskal-wallis rooms}
 #KRUSKAL-WALLIS
@@ -705,11 +896,11 @@ kruskal.test(families_children_num$TotalNonAdults ~ families_children_num$Reserv
 Iz rezultata provedenog testa možemo vidjeti malenu p-vrijednost što nalaže odbacivanje nulte hipoteze u korist alternativne hipoteze.\          
 
 Zaključak: \            
-U barem jednom tipu sobe prosječna veličina obitelji je drugačija no u ostalih, što možemo sročiti i tako da postoji razlika u popularnosti traženih tipova soba s obzirom na broj djece koje obitelj ima, kao što smo i predpostavili. 
+U barem jednom tipu sobe prosječna veličina obitelji je drugačija no u ostalih, što možemo sročiti i tako da postoji razlika u popularnosti traženih tipova soba s obzirom na broj djece koje obitelj ima, kao što smo i pretpostavili. 
 
-## Postoji li razlika u količini posebnih zahtjeva s obzirom na broj djece koje obitelj ima?
+## Postoji li razlika u količini posebnih zahtjeva s obzirom na broj djece koji obitelj ima?
 
-Postupak dolaženja do zaključka isti je kao u prethodnom primjeru, kako bismo izbjegli predpostavku normalnosti normalne distribucije populacije poslužiti ćemo se Kruskal-Wallisovim testom.
+Postupak dolaženja do zaključka isti je kao u prethodnom primjeru, kako bismo izbjegli pretpostavku normalnosti normalne distribucije populacije poslužit ćemo se Kruskal-Wallisovim testom.
 
 Naše hipoteze glase: \ 
 $$ \begin{aligned}
