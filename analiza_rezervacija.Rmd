@@ -613,10 +613,12 @@ Razmatrat ćemo zemlju kao varijablu koja određuje grupe i ukupnu duljinu borav
 library(nortest)
 
 # Print the results
-for (country in validCountries) {
-  cat("Lilliefors test for", country, "\n")
-  print(lillie.test(data[data$Country == country, ]$ADR))
-}
+# for (country in validCountries) {
+#  cat("Lilliefors test for", country, "\n")
+#  print(lillie.test(data[data$Country == country, ]$ADR))
+#}
+
+# zakomentiran print zbog 15 strana pdfa, zaključci u nastavku 
 
 ```
 Na temelju p-vrijednosti u našim rezultatima primjećujemo:\       
